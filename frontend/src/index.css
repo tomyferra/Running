@@ -2,7 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Make native date pickers readable on dark backgrounds */
-input[type='date'] {
-  color-scheme: dark;
+:root {
+  --paper:    #F3EFE6;
+  --ink:      #26231D;
+  --rust:     #B5512E;
+  --rust-soft:#E7D3C5;
+  --line:     #D9D1C0;
+  --leaf:     #5B6F4F;
+  --muted:    #7A7363;
 }
+
+html, body, #root {
+  background-color: #F3EFE6;
+  color: #26231D;
+}
+
+input[type='date'] {
+  color-scheme: light;
+}
+
+/* Ensure recharts tooltip text uses Inter */
+.recharts-tooltip-wrapper { font-family: 'Space Mono', monospace; }

@@ -1,29 +1,20 @@
 import { useEffect, useState } from 'react'
 
-const MONTHS   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-const DAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+const MESES   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+const DIA_ABR = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
 function toKey(d) {
   return d.toISOString().slice(0, 10)
 }
 
 function cellColor(km) {
-  if (!km || km === 0) return '#1e293b'
-  if (km < 3)          return '#14532d'
-  if (km < 6)          return '#166534'
-  if (km < 10)         return '#15803d'
-  if (km < 15)         return '#16a34a'
-  return                      '#22c55e'
+  if (!km || km === 0) return '#D9D1C0'
+  if (km < 3)          return '#cdd9c2'
+  if (km < 6)          return '#9eb98a'
+  if (km < 10)         return '#6f9956'
+  if (km < 15)         return '#5B6F4F'
+  return                      '#3d5234'
 }
-
-const LEGEND = [
-  { km: 0  },
-  { km: 2  },
-  { km: 4  },
-  { km: 8  },
-  { km: 12 },
-  { km: 16 },
-]
 
 const C = 12
 const G = 2
@@ -40,6 +31,41 @@ async function fetchAllActivities() {
     if (offset >= total) break
   }
   return all
+}
+
+function computeStreaks(distMap) {
+  const runDays = Object.keys(distMap).filter(k => distMap[k] > 0).sort()
+  if (!runDays.length) return { current: 0, longest: 0 }
+
+  let longest = 1, streak = 1
+  for (let i = 1; i < runDays.length; i++) {
+    const prev = new Date(runDays[i - 1] + 'T00:00:00')
+    const curr = new Date(runDays[i] + 'T00:00:00')
+    if (Math.round((curr - prev) / 86400000) === 1) {
+      streak++
+      longest = Math.max(longest, streak)
+    } else {
+      streak = 1
+    }
+  }
+  longest = Math.max(longest, 1)
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const lastRun = new Date(runDays[runDays.length - 1] + 'T00:00:00')
+  const daysSinceLast = Math.round((today - lastRun) / 86400000)
+
+  if (daysSinceLast > 1) return { current: 0, longest }
+
+  let current = 1
+  for (let i = runDays.length - 2; i >= 0; i--) {
+    const next = new Date(runDays[i + 1] + 'T00:00:00')
+    const curr = new Date(runDays[i] + 'T00:00:00')
+    if (Math.round((next - curr) / 86400000) === 1) current++
+    else break
+  }
+
+  return { current, longest }
 }
 
 export default function RunHeatmap({ refreshKey }) {
@@ -67,13 +93,11 @@ export default function RunHeatmap({ refreshKey }) {
   today.setHours(0, 0, 0, 0)
   const todayKey = toKey(today)
 
-  // Find earliest date in data, or fall back to 52 weeks ago
   const allKeys = Object.keys(distMap)
   const earliest = allKeys.length > 0
     ? new Date(allKeys.reduce((a, b) => a < b ? a : b))
     : (() => { const d = new Date(today); d.setDate(d.getDate() - 364); return d })()
 
-  // Rewind to the Sunday on or before the earliest date
   const gridStart = new Date(earliest)
   gridStart.setDate(earliest.getDate() - earliest.getDay())
 
@@ -89,115 +113,124 @@ export default function RunHeatmap({ refreshKey }) {
     cur.setDate(cur.getDate() + 7)
   }
 
-  // Month/year labels: show month name normally; when year changes show the year instead
   const colLabels = weeks.map((week, wi) => {
     const first = week.find(Boolean)
     if (!first) return null
-    if (wi === 0) return MONTHS[first.getMonth()]
+    if (wi === 0) return MESES[first.getMonth()]
     const prevFirst = weeks[wi - 1].find(Boolean)
     if (!prevFirst) return null
     if (first.getMonth() !== prevFirst.getMonth()) {
-      // Year boundary: show year number instead of month name
       if (first.getMonth() === 0) return String(first.getFullYear())
-      return MONTHS[first.getMonth()]
+      return MESES[first.getMonth()]
     }
     return null
   })
 
+  const { current: rachaActual, longest: rachaMáxima } = computeStreaks(distMap)
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl px-5 pt-4 pb-3 mb-5 relative">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-slate-400 text-xs uppercase tracking-wider">Running Heatmap</h3>
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-600 text-xs mr-0.5">Less</span>
-          {LEGEND.map(({ km }, i) => (
-            <div key={i} style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: cellColor(km) }} />
-          ))}
-          <span className="text-slate-600 text-xs ml-0.5">More</span>
-        </div>
-      </div>
+    <div className="ml-auto border-l border-line pl-10 relative">
+      <p className="font-mono text-[11px] tracking-[.12em] uppercase text-rust mb-3">
+        Mapa de calor
+      </p>
 
       {loading ? (
-        <div className="h-24 bg-slate-800 rounded-lg animate-pulse" />
+        <div className="h-24 w-96 bg-rust-soft/40 rounded-lg animate-pulse" />
       ) : (
-        <div className="overflow-x-auto">
-          <div style={{ display: 'inline-flex', flexDirection: 'column', userSelect: 'none' }}>
+        <>
+          <div className="overflow-x-auto">
+            <div style={{ display: 'inline-flex', flexDirection: 'column', userSelect: 'none' }}>
 
-            {/* Month / year label row */}
-            <div style={{ display: 'flex', gap: G, marginLeft: 28, marginBottom: 4 }}>
-              {weeks.map((_, wi) => {
-                const label = colLabels[wi]
-                const isYear = label && /^\d{4}$/.test(label)
-                return (
-                  <div
-                    key={wi}
-                    style={{
-                      width: C,
-                      fontSize: 9,
-                      color: isYear ? '#94a3b8' : '#64748b',
-                      fontWeight: isYear ? 600 : 400,
-                      whiteSpace: 'nowrap',
-                      overflow: 'visible',
-                    }}
-                  >
-                    {label ?? ''}
-                  </div>
-                )
-              })}
-            </div>
+              {/* Month labels */}
+              <div style={{ display: 'flex', gap: G, marginLeft: 28, marginBottom: 4 }}>
+                {weeks.map((_, wi) => {
+                  const label = colLabels[wi]
+                  const isYear = label && /^\d{4}$/.test(label)
+                  return (
+                    <div
+                      key={wi}
+                      style={{
+                        width: C,
+                        fontSize: 9,
+                        fontFamily: '"Space Mono", monospace',
+                        color: isYear ? '#26231D' : '#7A7363',
+                        fontWeight: isYear ? 700 : 400,
+                        whiteSpace: 'nowrap',
+                        overflow: 'visible',
+                      }}
+                    >
+                      {label ?? ''}
+                    </div>
+                  )
+                })}
+              </div>
 
-            <div style={{ display: 'flex', gap: G }}>
-              {/* Day-of-week labels */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: G, marginRight: 4 }}>
-                {DAY_ABBR.map((label, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      height: C,
-                      width: 22,
-                      fontSize: 9,
-                      color: '#64748b',
-                      lineHeight: `${C}px`,
-                      textAlign: 'right',
-                    }}
-                  >
-                    {i === 1 || i === 3 || i === 5 ? label : ''}
+              <div style={{ display: 'flex', gap: G }}>
+                {/* Day labels */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: G, marginRight: 4 }}>
+                  {DIA_ABR.map((label, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        height: C,
+                        width: 22,
+                        fontSize: 9,
+                        fontFamily: '"Space Mono", monospace',
+                        color: '#7A7363',
+                        lineHeight: `${C}px`,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {i === 1 || i === 3 || i === 5 ? label : ''}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Week columns */}
+                {weeks.map((week, wi) => (
+                  <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: G }}>
+                    {week.map((day, di) => {
+                      if (!day) return <div key={di} style={{ width: C, height: C }} />
+
+                      const key     = toKey(day)
+                      const km      = distMap[key]
+                      const isToday = key === todayKey
+
+                      return (
+                        <div
+                          key={di}
+                          style={{
+                            width: C,
+                            height: C,
+                            borderRadius: isToday ? '50%' : 3,
+                            backgroundColor: isToday && !km ? '#E7D3C5' : cellColor(km),
+                            border: isToday ? '2px solid #B5512E' : 'none',
+                            boxSizing: 'border-box',
+                            cursor: 'default',
+                          }}
+                          onMouseMove={e => setTooltip({ key, km, x: e.clientX, y: e.clientY })}
+                          onMouseLeave={() => setTooltip(null)}
+                        />
+                      )
+                    })}
                   </div>
                 ))}
               </div>
-
-              {/* Week columns */}
-              {weeks.map((week, wi) => (
-                <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: G }}>
-                  {week.map((day, di) => {
-                    if (!day) return <div key={di} style={{ width: C, height: C }} />
-
-                    const key     = toKey(day)
-                    const km      = distMap[key]
-                    const isToday = key === todayKey
-
-                    return (
-                      <div
-                        key={di}
-                        style={{
-                          width: C,
-                          height: C,
-                          borderRadius: isToday ? '50%' : 3,
-                          backgroundColor: isToday && !km ? '#1e3a5f' : cellColor(km),
-                          border: isToday ? `2px solid #94a3b8` : 'none',
-                          boxSizing: 'border-box',
-                          cursor: 'default',
-                        }}
-                        onMouseMove={e => setTooltip({ key, km, x: e.clientX, y: e.clientY })}
-                        onMouseLeave={() => setTooltip(null)}
-                      />
-                    )
-                  })}
-                </div>
-              ))}
             </div>
           </div>
-        </div>
+
+          {/* Streaks — below the grid, matching design.html */}
+          <div className="flex gap-6 mt-4">
+            <div>
+              <b className="font-fraunces font-semibold text-base text-ink block leading-tight">{rachaActual}</b>
+              <span className="font-mono text-[11px] text-muted">racha actual</span>
+            </div>
+            <div>
+              <b className="font-fraunces font-semibold text-base text-ink block leading-tight">{rachaMáxima}</b>
+              <span className="font-mono text-[11px] text-muted">racha máxima</span>
+            </div>
+          </div>
+        </>
       )}
 
       {tooltip && (
@@ -209,15 +242,15 @@ export default function RunHeatmap({ refreshKey }) {
             zIndex: 9999,
             pointerEvents: 'none',
           }}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs shadow-xl whitespace-nowrap"
+          className="bg-ink border border-ink/20 rounded-lg px-3 py-1.5 text-xs shadow-xl whitespace-nowrap"
         >
-          <span className="text-slate-300">{tooltip.key}</span>
+          <span className="font-mono text-paper/60">{tooltip.key}</span>
           {tooltip.km != null
-            ? <span className="text-emerald-400 font-semibold ml-2">{tooltip.km.toFixed(1)} km</span>
-            : <span className="text-slate-600 ml-2">No run</span>
+            ? <span className="font-mono text-leaf font-bold ml-2">{tooltip.km.toFixed(1)} km</span>
+            : <span className="font-mono text-paper/40 ml-2">Sin carrera</span>
           }
           {tooltip.key === todayKey && (
-            <span className="text-slate-500 ml-2 text-xs">· today</span>
+            <span className="font-mono text-rust ml-2">· hoy</span>
           )}
         </div>
       )}

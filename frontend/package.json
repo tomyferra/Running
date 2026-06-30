@@ -10,6 +10,7 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-gauge-component": "^2.0.29",
     "recharts": "^2.13.3"
   },
   "devDependencies": {

@@ -4,10 +4,10 @@ const LIMIT = 20
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-slate-800/50">
+    <tr className="border-b border-line/50">
       {[100, 160, 70, 70, 80, 55, 50].map((w, i) => (
         <td key={i} className="px-4 py-3">
-          <div className="h-4 bg-slate-800 rounded animate-pulse" style={{ width: w }} />
+          <div className="h-4 bg-rust-soft/60 rounded animate-pulse" style={{ width: w }} />
         </td>
       ))}
     </tr>
@@ -23,9 +23,9 @@ export default function ActivityList({ selectedId, onSelect, refreshKey }) {
   useEffect(() => {
     setLoading(true)
     const params = new URLSearchParams({ offset, limit: LIMIT })
-    if (filters.start_date)       params.set('start_date', filters.start_date)
-    if (filters.end_date)         params.set('end_date', filters.end_date)
-    if (filters.min_distance_km !== '') params.set('min_distance_km', filters.min_distance_km)
+    if (filters.start_date)              params.set('start_date', filters.start_date)
+    if (filters.end_date)                params.set('end_date', filters.end_date)
+    if (filters.min_distance_km !== '')  params.set('min_distance_km', filters.min_distance_km)
 
     fetch(`/api/v1/activities?${params}`)
       .then(r => r.json())
@@ -42,52 +42,57 @@ export default function ActivityList({ selectedId, onSelect, refreshKey }) {
   const currentPage = Math.floor(offset / LIMIT) + 1
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+    <div className="border border-line rounded-xl overflow-hidden">
+      {/* Section header */}
+      <div className="px-4 py-3 border-b-2 border-ink flex items-baseline justify-between">
+        <h2 className="font-fraunces italic text-xl text-ink">Registro de actividades</h2>
+        {data != null && (
+          <span className="font-mono text-xs text-muted">{data.total} entradas</span>
+        )}
+      </div>
+
       {/* Filter bar */}
-      <div className="px-4 py-3 border-b border-slate-800 flex flex-wrap items-center gap-3">
-        <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">Filter</span>
+      <div className="px-4 py-3 border-b border-line flex flex-wrap items-center gap-3 bg-rust-soft/20">
+        <span className="font-mono text-muted text-[10px] uppercase tracking-widest">Filtrar</span>
         <input
           type="date"
           name="start_date"
           value={filters.start_date}
           onChange={handleFilter}
-          className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="bg-paper border border-line text-ink font-mono text-xs rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-rust"
         />
-        <span className="text-slate-600 text-sm">→</span>
+        <span className="font-mono text-muted text-sm">→</span>
         <input
           type="date"
           name="end_date"
           value={filters.end_date}
           onChange={handleFilter}
-          className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="bg-paper border border-line text-ink font-mono text-xs rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-rust"
         />
         <input
           type="number"
           name="min_distance_km"
           value={filters.min_distance_km}
           onChange={handleFilter}
-          placeholder="Min km"
+          placeholder="Mín km"
           min="0"
           step="0.5"
-          className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder-slate-600"
+          className="bg-paper border border-line text-ink font-mono text-xs rounded px-3 py-1.5 w-24 focus:outline-none focus:ring-1 focus:ring-rust placeholder-muted/50"
         />
-        {data != null && (
-          <span className="ml-auto text-slate-500 text-sm">{data.total} runs</span>
-        )}
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-slate-500 text-xs uppercase tracking-wider border-b border-slate-800">
-              <th className="text-left px-4 py-3 font-medium">Date</th>
-              <th className="text-left px-4 py-3 font-medium">Name</th>
-              <th className="text-right px-4 py-3 font-medium">Dist</th>
-              <th className="text-right px-4 py-3 font-medium">Time</th>
-              <th className="text-right px-4 py-3 font-medium">Pace</th>
-              <th className="text-right px-4 py-3 font-medium">HR</th>
-              <th className="text-right px-4 py-3 font-medium">↑</th>
+            <tr className="border-b border-line">
+              <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-widest text-muted font-normal">Fecha</th>
+              <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-widest text-muted font-normal">Nombre</th>
+              <th className="text-right px-4 py-3 font-mono text-[10px] uppercase tracking-widest text-muted font-normal">Dist</th>
+              <th className="text-right px-4 py-3 font-mono text-[10px] uppercase tracking-widest text-muted font-normal">Tiempo</th>
+              <th className="text-right px-4 py-3 font-mono text-[10px] uppercase tracking-widest text-muted font-normal">Ritmo</th>
+              <th className="text-right px-4 py-3 font-mono text-[10px] uppercase tracking-widest text-muted font-normal">FC</th>
+              <th className="text-right px-4 py-3 font-mono text-[10px] uppercase tracking-widest text-muted font-normal">↑</th>
             </tr>
           </thead>
           <tbody>
@@ -96,9 +101,9 @@ export default function ActivityList({ selectedId, onSelect, refreshKey }) {
             {!loading && data?.items?.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-16 text-center">
-                  <p className="text-slate-500 mb-1">No activities found.</p>
-                  <p className="text-slate-600 text-xs">
-                    Hit <span className="text-emerald-400 font-medium">Sync</span> to pull from Garmin Connect.
+                  <p className="font-fraunces italic text-ink text-lg mb-1">Sin actividades.</p>
+                  <p className="font-mono text-muted text-xs">
+                    Presioná <span className="text-rust font-bold">Sincronizar</span> para importar desde Garmin Connect.
                   </p>
                 </td>
               </tr>
@@ -106,7 +111,7 @@ export default function ActivityList({ selectedId, onSelect, refreshKey }) {
 
             {!loading && data?.items?.map(a => {
               const date = a.start_time
-                ? new Date(a.start_time).toLocaleDateString('en-GB', {
+                ? new Date(a.start_time).toLocaleDateString('es-AR', {
                     day: '2-digit', month: 'short', year: 'numeric',
                   })
                 : '—'
@@ -116,26 +121,26 @@ export default function ActivityList({ selectedId, onSelect, refreshKey }) {
                 <tr
                   key={a.activity_id}
                   onClick={() => onSelect(a.activity_id)}
-                  className={`border-b border-slate-800/40 cursor-pointer transition-colors select-none ${
-                    isSelected ? 'bg-emerald-950/40' : 'hover:bg-slate-800/40'
+                  className={`border-b border-line/50 cursor-pointer transition-colors select-none ${
+                    isSelected ? 'bg-rust-soft/60' : 'hover:bg-rust-soft/30'
                   }`}
                 >
-                  <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{date}</td>
-                  <td className="px-4 py-3 text-white font-medium max-w-[180px] truncate">{a.name ?? '—'}</td>
+                  <td className="px-4 py-3 font-mono text-muted text-xs whitespace-nowrap">{date}</td>
+                  <td className="px-4 py-3 font-fraunces italic text-ink text-base max-w-[180px] truncate">{a.name ?? '—'}</td>
                   <td className="px-4 py-3 text-right font-mono">
-                    <span className="text-emerald-400 font-medium">
+                    <span className="text-rust font-bold">
                       {a.distance_km != null ? a.distance_km.toFixed(2) : '—'}
                     </span>
                     {a.distance_km != null && (
-                      <span className="text-slate-600 text-xs ml-0.5">km</span>
+                      <span className="text-muted text-xs ml-0.5">km</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-300">{a.elapsed_time ?? '—'}</td>
-                  <td className="px-4 py-3 text-right font-mono text-slate-300">{a.avg_pace ?? '—'}</td>
-                  <td className="px-4 py-3 text-right text-slate-400">
+                  <td className="px-4 py-3 text-right font-mono text-ink text-xs">{a.elapsed_time ?? '—'}</td>
+                  <td className="px-4 py-3 text-right font-mono text-ink text-xs">{a.avg_pace ?? '—'}</td>
+                  <td className="px-4 py-3 text-right font-mono text-muted text-xs">
                     {a.avg_hr != null ? a.avg_hr : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-500">
+                  <td className="px-4 py-3 text-right font-mono text-muted text-xs">
                     {a.ascent != null ? `${Math.round(a.ascent)}m` : '—'}
                   </td>
                 </tr>
@@ -147,21 +152,21 @@ export default function ActivityList({ selectedId, onSelect, refreshKey }) {
 
       {/* Pagination */}
       {!loading && totalPages > 1 && (
-        <div className="px-4 py-3 border-t border-slate-800 flex items-center justify-between">
+        <div className="px-4 py-3 border-t border-line flex items-center justify-between bg-rust-soft/10">
           <button
             onClick={() => setOffset(o => Math.max(0, o - LIMIT))}
             disabled={offset === 0}
-            className="text-sm text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="font-mono text-xs text-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            ← Prev
+            ← Ant.
           </button>
-          <span className="text-slate-600 text-xs">Page {currentPage} / {totalPages}</span>
+          <span className="font-mono text-muted text-xs">Pág. {currentPage} / {totalPages}</span>
           <button
             onClick={() => setOffset(o => o + LIMIT)}
             disabled={!data || offset + LIMIT >= data.total}
-            className="text-sm text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="font-mono text-xs text-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            Next →
+            Sig. →
           </button>
         </div>
       )}
