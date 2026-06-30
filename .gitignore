@@ -3,20 +3,10 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-.Python
 *.egg
 *.egg-info/
 dist/
 build/
-eggs/
-parts/
-var/
-sdist/
-develop-eggs/
-.installed.cfg
-lib/
-lib64/
-*.so
 .venv/
 venv/
 ENV/
@@ -27,15 +17,12 @@ env/
 .env.local
 .env.*.local
 
-# Garmin data & tokens
+# Garmin data, tokens & DB
 data/
 garth_tokens/
 *.db
 *.fit
 *.json.bak
-
-# Docker
-.dockerignore
 
 # Kubernetes secrets (never commit real secrets)
 kubernetes/secret.yaml
@@ -46,18 +33,21 @@ kubernetes/secret.yaml
 *.swp
 *.swo
 .DS_Store
+Thumbs.db
 
-# Pytest
+# Test / lint caches
 .pytest_cache/
 .coverage
 htmlcov/
-
-# Mypy
 .mypy_cache/
-
-# Ruff / linting
 .ruff_cache/
 
-# GarminDB config (contains credentials)
-~/.GarminDb/
-GarminConnectConfig.json
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Misc
+*.log
+*.tmp
+tmp_*.png
