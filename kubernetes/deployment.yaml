@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: garmin-api
+  namespace: default
+  labels:
+    app: garmin-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: garmin-api
+  template:
+    metadata:
+      labels:
+        app: garmin-api
+    spec:
+      securityContext:
+        runAsUser: 1001
+        runAsNonRoot: true
+        fsGroup: 1001
+
+      containers:
+        - name: garmin-api
+          image: garmin-api:local
+          imagePullPolicy: Never  # use local image loaded into minikube
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: garmin-api-config
+            - secretRef:
+                name: garmin-credentials
+
+          volumeMounts:
+            - name: garmin-data
+              mountPath: /data/garmin
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+      volumes:
+        - name: garmin-data
+          persistentVolumeClaim:
+            claimName: garmin-data-pvc

@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Make native date pickers readable on dark backgrounds */
+input[type='date'] {
+  color-scheme: dark;
+}
